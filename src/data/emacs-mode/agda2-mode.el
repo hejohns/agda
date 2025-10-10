@@ -1684,11 +1684,12 @@ ways."
   (agda2-let
       ((literate (agda2-literate-p))
        stk
+       brackets-stk
        top
        ;; Don't run modification hooks: we don't want this function to
        ;; trigger agda2-abort-highlighting.
        (inhibit-modification-hooks t))
-      ((delims() (re-search-forward "[?]\\|[{][-!]\\|[-!][}]\\|--\\|^%.*\\\\begin{code}\\|\\\\begin{code}\\|\\\\end{code}\\|```\\|\\#\\+begin_src agda2\\|\\#\\+end_src" nil t))
+      ((delims() (re-search-forward "[?]\\|[{][-!]\\|[-!][}]\\|--\\|^%.*\\\\begin{code}\\|\\\\begin{code}\\|\\\\end{code}\\|\\\\agda{\\|^%.*\\\\agda{\\|{\\|}\\|```\\|\\#\\+begin_src agda2\\|\\#\\+end_src" nil t))
        ;; is-proper checks whether string s (e.g. "?" or "--") is proper
        ;; i.e., is not part of an identifier.
        ;; comment-starter is true if s starts a comment (e.g. "--")
@@ -1720,9 +1721,28 @@ ways."
       (if literate (push 'outside stk))
       (goto-char (point-min))
       (while (and goals (safe-delims))
+        ;;(insert (match-string 0))
         (agda2--case (match-string 0)
           ("\\begin{code}"     (when (outside-code)               (pop stk)))
           ("\\end{code}"       (when (not stk)                    (push 'outside stk)))
+          ("\\agda{"           (when (outside-code)               (pop stk)))
+          ("{"                 (when (and (inside-code)
+                                          (not (inside-comment)))
+                                 (progn
+                                   ;;(insert (number-to-string (length brackets-stk)))
+                                   (push 'open-bracket brackets-stk))))
+          ("}"                 (when (and (inside-code)
+                                          (not (inside-comment)))
+                                 (progn
+                                   ;;(insert (number-to-string (length brackets-stk)))
+                                   (if
+                                     brackets-stk
+                                     (progn
+                                       ;;(insert "7")
+                                       (pop brackets-stk))
+                                     (progn
+                                       ;;(insert "8")
+                                       (push 'outside stk))))))
           ("#+begin_src agda2" (when (outside-code)               (pop stk)))
           ("#+end_src"         (when (not stk)                    (push 'outside stk)))
           ("```"               (if   (outside-code)               (pop stk)
