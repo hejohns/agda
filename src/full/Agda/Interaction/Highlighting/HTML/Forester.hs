@@ -63,6 +63,8 @@ wrap_verb w = B.fromLazyText $ L.foldr go "" (B.toLazyText w)
     go :: Char -> L.Text -> L.Text
     go '[' acc = L.append "\\startverb[\\stopverb" acc
     go ']' acc = L.append "\\startverb]\\stopverb" acc
+    go '(' acc = L.append "\\startverb(\\stopverb" acc
+    go ')' acc = L.append "\\startverb)\\stopverb" acc
     go x acc = L.cons x acc
 
 renderMarkupBuilderWith ::
